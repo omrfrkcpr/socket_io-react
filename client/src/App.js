@@ -1,52 +1,25 @@
-import "./App.css";
-import io from "socket.io-client";
-import { useEffect, useState } from "react";
-
-const socket = io.connect(process.env.REACT_APP_SERVER_URL);
+import React, { useState } from "react";
+import ConversationList from "./components/ConversationList";
+import Chat from "./components/Chat";
 
 function App() {
-  //Room State
-  const [room, setRoom] = useState("");
+  const [activeRoom, setActiveRoom] = useState(null);
 
-  // Messages States
-  const [message, setMessage] = useState("");
-  const [messageReceived, setMessageReceived] = useState("");
-
-  const joinRoom = () => {
-    if (room) {
-      socket.emit("join_room", room);
-    }
-  };
-
-  const sendMessage = () => {
-    socket.emit("send_message", { message, room });
-    setMessage("");
-  };
-
-  useEffect(() => {
-    socket.on("receive_message", (data) => {
-      setMessageReceived(data.message);
-    });
-  }, [socket]);
   return (
-    <div className="App">
-      <input
-        placeholder="Room Number..."
-        onChange={(event) => {
-          setRoom(event.target.value);
-        }}
-      />
-      <button onClick={joinRoom}> Join Room</button>
-      <input
-        placeholder="Message..."
-        value={message}
-        onChange={(event) => {
-          setMessage(event.target.value);
-        }}
-      />
-      <button onClick={sendMessage}> Send Message</button>
-      <h1> Message:</h1>
-      {messageReceived}
+    <div className="flex h-screen">
+      <div className="w-1/4 bg-gray-900 text-white">
+        <ConversationList
+          activeRoom={activeRoom}
+          setActiveRoom={setActiveRoom}
+        />
+      </div>
+      <div className="w-3/4 bg-gray-100 flex items-center justify-center">
+        {activeRoom ? (
+          <Chat activeRoom={activeRoom} />
+        ) : (
+          <h3 className="text-xl">Select a conversation</h3>
+        )}
+      </div>
     </div>
   );
 }
