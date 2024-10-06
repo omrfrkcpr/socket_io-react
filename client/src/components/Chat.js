@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 import axios from "axios";
 import { parseISO, formatDistanceToNow } from "date-fns";
@@ -9,6 +9,7 @@ const socket = io.connect(process.env.REACT_APP_SERVER_URL);
 function Chat({ activeRoom }) {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (activeRoom) {
@@ -76,9 +77,14 @@ function Chat({ activeRoom }) {
     );
   }, [activeRoom]);
 
+  // Scroll to the bottom of the messages when they change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
   return (
     <div className="flex flex-col h-full w-full p-4">
-      <div className="flex-1 overflow-y-auto mb-4 p-4 bg-gray-700 rounded-lg">
+      <div className="flex-1 overflow-y-scroll mb-4 p-4 bg-gray-700 rounded-lg">
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -88,6 +94,7 @@ function Chat({ activeRoom }) {
             <p className="text-sm">{formatDynamicDate(msg.createdAt)}</p>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
       <div className="flex">
         <input
