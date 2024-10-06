@@ -1,33 +1,29 @@
+"use strict";
+
+require("express-async-errors");
 const express = require("express");
-const mongoose = require("mongoose");
+const app = express();
 const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
 require("dotenv").config();
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-
 const Conversation = require("./src/models/conversation");
 const Message = require("./src/models/message");
 
 const { dbConnection } = require("./src/configs/dbConnection");
 dbConnection();
 
-const db = mongoose.connection;
-db.on("error", (error) => console.error(error));
-db.once("open", () => console.log("Connected to MongoDB"));
-
-const conversationsRouter = require("./src/routes/conversations");
-app.use("/conversations", conversationsRouter);
+app.use(cors());
+app.use(express.json());
+app.use(require("./src/middlewares/authentication"));
+app.use(require("./src/routes"));
 
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL,
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "PATCH", "HEAD", "DELETE", "OPTIONS"],
   },
 });
 
@@ -72,14 +68,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("new_conversation", async () => {
-    try {
-      const updatedConversations = await Conversation.find().populate(
-        "messages"
-      );
-      io.emit("update_conversations", updatedConversations);
-    } catch (err) {
-      console.error(err);
-    }
+    const updatedConversations = await Conversation.find().populate("messages");
+    io.emit("update_conversations", updatedConversations);
   });
 
   // After update conversation
@@ -94,6 +84,9 @@ io.on("connection", (socket) => {
     io.emit("update_conversations", updatedConversations);
   });
 });
+
+// Error Handler Middleware
+app.use(require("./src/middlewares/errorHandler"));
 
 const PORT = process.env.PORT || 8000;
 server.listen(PORT, () => {

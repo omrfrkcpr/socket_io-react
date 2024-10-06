@@ -1,10 +1,15 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import io from "socket.io-client";
+import { useSelector } from "react-redux";
+import useAuthCalls from "../hooks/useAuthCalls";
+import { MdLogout } from "react-icons/md";
 
 const socket = io.connect(process.env.REACT_APP_SERVER_URL);
 
 function ConversationList({ setActiveRoom, activeRoom }) {
+  const { currentUser } = useSelector((state) => state.auth);
+  const { logout } = useAuthCalls();
   const [conversations, setConversations] = useState([]);
   const [newConversationName, setNewConversationName] = useState("");
   const [editConversationName, setEditConversationName] = useState("");
@@ -74,7 +79,23 @@ function ConversationList({ setActiveRoom, activeRoom }) {
 
   return (
     <div className="p-4 w-full h-full bg-gray-800 text-white flex flex-col">
-      <h2 className="text-2xl font-bold mb-4">Conversations</h2>
+      <div className="flex justify-between items-center border-b pb-3 border-white">
+        <div className="flex space-x-2 items-center">
+          <img
+            src="https://media.istockphoto.com/id/1337144146/vector/default-avatar-profile-icon-vector.jpg?s=612x612&w=0&k=20&c=BIbFwuv7FxTWvh5S3vB6bkT0Qv8Vn8N5Ffseq84ClGI="
+            alt=""
+            className="rounded-full h-8 w-8"
+          />
+          <h3>{currentUser.username}</h3>
+        </div>
+        <button
+          onClick={() => logout()}
+          className="flex items-center gap-1 hover:text-gray-300"
+        >
+          Logout <MdLogout />
+        </button>
+      </div>
+      <h2 className="text-2xl font-bold mb-4 pt-3">Conversations</h2>
       <div className="flex flex-col space-y-2 overflow-y-auto mb-4">
         {conversations.map((conversation) => (
           <div
