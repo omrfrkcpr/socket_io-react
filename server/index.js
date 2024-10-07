@@ -5,6 +5,7 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const http = require("http");
+const jwt = require("jsonwebtoken");
 const { Server } = require("socket.io");
 require("dotenv").config();
 const Conversation = require("./src/models/conversation");
@@ -28,7 +29,22 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  console.log(`User Connected: ${socket.id}`);
+  const token = socket.handshake.query.token;
+
+  if (!token) {
+    console.error("No token provided.");
+    return socket.disconnect();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.ACCESS_KEY);
+    socket.user = decoded;
+  } catch (error) {
+    console.error("Invalid token:", error);
+    return socket.disconnect();
+  }
+
+  // console.log(`User Connected: ${socket.id}`);
 
   socket.on("join_room", (room) => {
     socket.join(room);
@@ -47,6 +63,7 @@ io.on("connection", (socket) => {
       const newMessage = new Message({
         content: message,
         conversation: conversation._id,
+        senderId: socket.user._id,
       });
       await newMessage.save();
 
@@ -57,9 +74,12 @@ io.on("connection", (socket) => {
         message: newMessage.content,
         room,
       });
-      const updatedConversations = await Conversation.find().populate(
-        "messages"
-      );
+      const updatedConversations = await Conversation.find({
+        $or: [
+          { createdBy: socket.user._id },
+          { participantIds: { $in: socket.user._id } },
+        ],
+      }).populate({ path: "messages", populate: "senderId" });
       io.emit("update_conversations", updatedConversations);
     } catch (err) {
       console.error(err);
@@ -67,20 +87,57 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("new_conversation", async () => {
-    const updatedConversations = await Conversation.find().populate("messages");
-    io.emit("update_conversations", updatedConversations);
+  socket.on("new_conversation", async (data) => {
+    const { name, participantIds } = data;
+
+    if (!name || !participantIds || participantIds.length === 0) {
+      socket.emit("error", "Name and participant IDs are required.");
+      return;
+    }
+
+    const newConversation = new Conversation({
+      name,
+      createdBy: socket.user._id,
+      participantIds,
+    });
+
+    try {
+      const savedConversation = await newConversation.save();
+      socket.emit("conversation_created", savedConversation);
+
+      const updatedConversations = await Conversation.find({
+        $or: [
+          { createdBy: socket.user._id },
+          { participantIds: { $in: socket.user._id } },
+        ],
+      }).populate({ path: "messages", populate: "senderId" });
+
+      io.emit("update_conversations", updatedConversations);
+    } catch (error) {
+      console.error("Error creating conversation:", error);
+      socket.emit("error", "Failed to create conversation.");
+    }
   });
 
   // After update conversation
   socket.on("update_conversation", async () => {
-    const updatedConversations = await Conversation.find().populate("messages");
+    const updatedConversations = await Conversation.find({
+      $or: [
+        { createdBy: socket.user._id },
+        { participantIds: { $in: socket.user._id } },
+      ],
+    }).populate({ path: "messages", populate: "senderId" });
     io.emit("update_conversations", updatedConversations);
   });
 
   // After delete conversation
   socket.on("delete_conversation", async () => {
-    const updatedConversations = await Conversation.find().populate("messages");
+    const updatedConversations = await Conversation.find({
+      $or: [
+        { createdBy: socket.user._id },
+        { participantIds: { $in: socket.user._id } },
+      ],
+    }).populate({ path: "messages", populate: "senderId" });
     io.emit("update_conversations", updatedConversations);
   });
 });

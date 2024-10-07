@@ -16,11 +16,14 @@ module.exports = {
         throw new CustomError("User already exists!", 400);
       }
 
+      const avatarUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${username}`;
+
       // Create new user
       const hashedPassword = bcrypt.hashSync(password, 10);
       user = new User({
         username,
         email,
+        avatar: avatarUrl,
         password: hashedPassword,
       });
 

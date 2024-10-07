@@ -1,15 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
-import axios from "axios";
 import { parseISO, formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";
-
-const socket = io.connect(process.env.REACT_APP_SERVER_URL);
+import { useSelector } from "react-redux";
+import useAxios from "../hooks/useAxios";
 
 function Chat({ activeRoom }) {
+  const { currentUser, token } = useSelector((state) => state.auth);
+  const axiosWithToken = useAxios();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const messagesEndRef = useRef(null);
+
+  const socket = io.connect(process.env.REACT_APP_SERVER_URL, {
+    query: { token },
+  });
 
   useEffect(() => {
     if (activeRoom) {
@@ -30,10 +35,10 @@ function Chat({ activeRoom }) {
 
   const fetchMessages = async () => {
     try {
-      const response = await axios.get(
-        `${process.env.REACT_APP_SERVER_URL}/conversations/name/${activeRoom}`
+      const { data } = await axiosWithToken.get(
+        `/conversations/name/${activeRoom}`
       );
-      setMessages(response.data.messages);
+      setMessages(data.data.messages);
     } catch (error) {
       console.error("Error fetching messages:", error);
     }
@@ -88,10 +93,30 @@ function Chat({ activeRoom }) {
         {messages.map((msg, index) => (
           <div
             key={index}
-            className="mb-2 p-2 text-white bg-gray-800 rounded-lg flex justify-between items-start w-1/2"
+            className={`flex mb-4 ${
+              msg.senderId._id === currentUser._id
+                ? "justify-end"
+                : "justify-start"
+            }`}
           >
-            <p>{msg.content}</p>
-            <p className="text-sm">{formatDynamicDate(msg.createdAt)}</p>
+            <div className=" max-w-xs w-full relative">
+              <img
+                src={msg.senderId.avatar}
+                alt="user-avatar"
+                className="rounded-full h-8 w-8 bg-white absolute top-7"
+              />
+              <div>
+                <p className="ml-11 text-white text-sm mb-1">
+                  {msg.senderId.username}
+                </p>
+                <div className="mb-2 ml-10 p-2 text-white bg-gray-800 rounded-lg">
+                  <p>{msg.content}</p>
+                </div>
+              </div>
+              <p className="absolute -bottom-3 right-0 text-white text-xs">
+                {formatDynamicDate(msg.createdAt)}
+              </p>
+            </div>
           </div>
         ))}
         <div ref={messagesEndRef} />

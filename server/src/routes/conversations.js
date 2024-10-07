@@ -2,12 +2,20 @@ const express = require("express");
 const router = express.Router();
 const Conversation = require("../models/conversation");
 const Message = require("../models/message");
+const { CustomError } = require("../errors/customError");
 
-// Get all conversations
+// Get all conversations for the user
 router.get("/", async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
   try {
-    const conversations = await Conversation.find().populate("messages");
-    res.json(conversations);
+    const conversations = await Conversation.find({
+      $or: [{ createdBy: req.user._id }, { participantIds: req.user._id }],
+    }).populate({path:"messages", populate: "senderId"});
+
+    res.send({ error: false, data: conversations });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -15,15 +23,23 @@ router.get("/", async (req, res) => {
 
 // Create a new conversation
 router.post("/", async (req, res) => {
-  const conversation = new Conversation({
-    name: req.body.name,
+  const { name, participantIds } = req.body;
+
+  if (!name || !participantIds || !participantIds.length) {
+    return res.status(400).send("Name and participant IDs are required.");
+  }
+
+  const newConversation = new Conversation({
+    name,
+    createdBy: req.user._id,
+    participantIds,
   });
 
   try {
-    const newConversation = await conversation.save();
-    res.status(201).json(newConversation);
+    const savedConversation = await newConversation.save();
+    res.status(201).send({ error: false, data: savedConversation });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    throw new CustomError(err.message, 500);
   }
 });
 
@@ -32,46 +48,52 @@ router.get("/name/:name", async (req, res) => {
   try {
     const conversation = await Conversation.findOne({
       name: req.params.name,
-    }).populate("messages");
-    if (!conversation)
-      return res.status(404).json({ message: "Conversation not found" });
-    res.json(conversation);
+      $or: [{ createdBy: req.user._id }, { participantIds: req.user._id }],
+    }).populate({path:"messages", populate: "senderId"});
+    if (!conversation) throw new CustomError("Conversation not found", 404);
+    res.send({ error: false, data: conversation });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    throw new CustomError(err.message, 500);
   }
 });
 
 // Update a conversation by name
 router.put("/name/:name", async (req, res) => {
   try {
-    const conversation = await Conversation.findOne({ name: req.params.name });
+    const conversation = await Conversation.findOne({
+      name: req.params.name,
+      createdBy: req.user._id,
+    });
     if (!conversation) {
-      return res.status(404).json({ message: "Conversation not found" });
+      throw new CustomError("Conversation not found", 404);
     }
 
     conversation.name = req.body.name;
     await conversation.save();
 
-    res.json(conversation);
+    res.send({ error: false, data: conversation });
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    throw new CustomError(err.message, 500);
   }
 });
 
 // Delete a conversation by name
 router.delete("/name/:name", async (req, res) => {
   try {
-    const conversation = await Conversation.findOne({ name: req.params.name });
+    const conversation = await Conversation.findOne({
+      name: req.params.name,
+      createdBy: req.user._id,
+    });
     if (!conversation) {
-      return res.status(404).json({ message: "Conversation not found" });
+      throw new CustomError("Conversation not found", 404);
     }
 
     await Message.deleteMany({ conversation: conversation._id });
     await Conversation.deleteOne({ name: req.params.name });
 
-    res.json({ message: "Conversation deleted" });
+    res.status(204).send();
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    throw new CustomError(err.message, 500);
   }
 });
 

@@ -5,6 +5,7 @@ import {
   loginSuccess,
   logoutSuccess,
   registerSuccess,
+  usersSuccess,
 } from "../features/authSlice";
 import { useNavigate } from "react-router-dom";
 import useAxios, { axiosWithPublic } from "./useAxios";
@@ -51,6 +52,17 @@ const useAuthCalls = () => {
     }
   };
 
+  const getAllUsers = async () => {
+    dispatch(fetchStart());
+    try {
+      const { data } = await axiosWithToken.get("users");
+      dispatch(usersSuccess(data));
+    } catch (error) {
+      dispatch(fetchFail());
+      console.log(error);
+    }
+  };
+
   const logout = async () => {
     dispatch(fetchStart());
     try {
@@ -73,6 +85,7 @@ const useAuthCalls = () => {
     register,
     login,
     logout,
+    getAllUsers,
   };
 };
 
