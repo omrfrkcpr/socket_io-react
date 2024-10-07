@@ -14,7 +14,14 @@ const Message = require("./src/models/message");
 const { dbConnection } = require("./src/configs/dbConnection");
 dbConnection();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+    methods: ["GET", "POST", "PUT", "PATCH", "HEAD", "DELETE", "OPTIONS"],
+    credentials: true, // This allows the client to send the token with the request
+    allowedHeaders: ["Content-Type", "Authorization"], // This is needed to send the token in the request headers
+  })
+);
 app.use(express.json());
 app.use(require("./src/middlewares/authentication"));
 app.use(require("./src/routes"));
