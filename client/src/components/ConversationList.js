@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import io from "socket.io-client";
 import { useSelector } from "react-redux";
 import useAuthCalls from "../hooks/useAuthCalls";
 import { MdLogout, MdCancel } from "react-icons/md";
@@ -12,9 +11,11 @@ import {
 } from "react-icons/fa";
 import { RiDeleteBin5Fill } from "react-icons/ri";
 import useAxios from "../hooks/useAxios";
+import { useSocket } from "../SocketContext";
 
 function ConversationList({ setActiveRoom, activeRoom }) {
-  const { currentUser, users, token } = useSelector((state) => state.auth);
+  const { currentUser, users } = useSelector((state) => state.auth);
+  const socket = useSocket();
   const { logout, getAllUsers } = useAuthCalls();
   const [conversations, setConversations] = useState([]);
   const axiosWithToken = useAxios();
@@ -25,15 +26,8 @@ function ConversationList({ setActiveRoom, activeRoom }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showSidebarMenu, setShowSidebarMenu] = useState(false);
 
-  const socket = io.connect(process.env.REACT_APP_SERVER_URL, {
-    query: { token },
-  });
-
   useEffect(() => {
     fetchConversations();
-  }, []);
-
-  useEffect(() => {
     getAllUsers();
   }, []);
 
@@ -44,14 +38,16 @@ function ConversationList({ setActiveRoom, activeRoom }) {
   }, [conversations, activeRoom]);
 
   useEffect(() => {
-    socket.on("update_conversations", (data) => {
-      setConversations(data);
-    });
+    if (socket) {
+      socket.on("update_conversations", (data) => {
+        setConversations(data);
+      });
 
-    return () => {
-      socket.off("update_conversations");
-    };
-  }, []);
+      return () => {
+        socket.off("update_conversations");
+      };
+    }
+  }, [socket]);
 
   const fetchConversations = async () => {
     const { data } = await axiosWithToken.get(`/conversations`);
@@ -86,6 +82,10 @@ function ConversationList({ setActiveRoom, activeRoom }) {
 
   const deleteConversation = async (name) => {
     await axiosWithToken.delete(`/conversations/name/${name}`);
+
+    if (name === activeRoom) {
+      setActiveRoom(null);
+    }
 
     fetchConversations();
     socket.emit("delete_conversation");

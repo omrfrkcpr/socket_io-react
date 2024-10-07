@@ -1,21 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
-import io from "socket.io-client";
 import { parseISO, formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { useSelector } from "react-redux";
 import useAxios from "../hooks/useAxios";
 import { MdClose } from "react-icons/md";
+import { useSocket } from "../SocketContext";
 
 function Chat({ activeRoom, setActiveRoom }) {
-  const { currentUser, token } = useSelector((state) => state.auth);
+  const { currentUser } = useSelector((state) => state.auth);
+  const socket = useSocket();
   const axiosWithToken = useAxios();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const messagesEndRef = useRef(null);
-
-  const socket = io.connect(process.env.REACT_APP_SERVER_URL, {
-    query: { token },
-  });
 
   useEffect(() => {
     if (activeRoom) {
