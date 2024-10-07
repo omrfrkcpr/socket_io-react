@@ -89,9 +89,9 @@ function Chat({ activeRoom, setActiveRoom }) {
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full w-full p-4 relative">
+    <div className="flex flex-col h-full w-full p-1 md:p-4 relative">
       <button
-        className="absolute right-12 top-6 bg-red-600 text-white p-[2px] rounded-full text-xl hover:opacity-50"
+        className="absolute right-10 md:right-12 top-6 bg-red-600 text-white p-[2px] rounded-full text-lg md:text-xl hover:opacity-50"
         onClick={() => setActiveRoom(null)}
       >
         <MdClose />
