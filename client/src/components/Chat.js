@@ -4,8 +4,9 @@ import { parseISO, formatDistanceToNow } from "date-fns";
 import { enUS } from "date-fns/locale";
 import { useSelector } from "react-redux";
 import useAxios from "../hooks/useAxios";
+import { MdClose } from "react-icons/md";
 
-function Chat({ activeRoom }) {
+function Chat({ activeRoom, setActiveRoom }) {
   const { currentUser, token } = useSelector((state) => state.auth);
   const axiosWithToken = useAxios();
   const [message, setMessage] = useState("");
@@ -88,8 +89,14 @@ function Chat({ activeRoom }) {
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full w-full p-4">
-      <div className="flex-1 overflow-y-scroll mb-4 p-4 bg-gray-700 rounded-lg">
+    <div className="flex flex-col h-full w-full p-4 relative">
+      <button
+        className="absolute right-12 top-6 bg-red-600 text-white p-[2px] rounded-full text-xl hover:opacity-50"
+        onClick={() => setActiveRoom(null)}
+      >
+        <MdClose />
+      </button>
+      <div className="flex-1 overflow-y-scroll mb-4 pt-10 px-4 pb-4 bg-gray-700 rounded-lg">
         {messages.map((msg, index) => (
           <div
             key={index}

@@ -7,17 +7,15 @@ const Home = () => {
 
   return (
     <div className="flex h-screen">
-      <div className="w-1/4 bg-gray-900 text-white">
-        <ConversationList
-          activeRoom={activeRoom}
-          setActiveRoom={setActiveRoom}
-        />
-      </div>
-      <div className="w-3/4 bg-gray-100 flex items-center justify-center">
+      <ConversationList activeRoom={activeRoom} setActiveRoom={setActiveRoom} />
+
+      <div className="w-[calc(100vw-60px)] md:w-3/4 bg-gray-100 flex items-center justify-center">
         {activeRoom ? (
-          <Chat activeRoom={activeRoom} />
+          <Chat activeRoom={activeRoom} setActiveRoom={setActiveRoom} />
         ) : (
-          <h3 className="text-xl">Select a conversation</h3>
+          <h3 className="px-10 text-center text-md md:text-xl">
+            Select or create a conversation from side menu
+          </h3>
         )}
       </div>
     </div>
