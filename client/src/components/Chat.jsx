@@ -6,7 +6,7 @@ import useAxios from "../hooks/useAxios";
 import { MdClose } from "react-icons/md";
 import { useSocket } from "../SocketContext";
 
-function Chat({ activeRoom, setActiveRoom }) {
+function Chat({ activeRoom, setActiveRoom, conversations, setConversations }) {
   const { currentUser } = useSelector((state) => state.auth);
   const socket = useSocket();
   const axiosWithToken = useAxios();
@@ -36,7 +36,23 @@ function Chat({ activeRoom, setActiveRoom }) {
       const { data } = await axiosWithToken.get(
         `/conversations/name/${activeRoom}`
       );
+
+      // console.log(data);
       setMessages(data.data.messages);
+
+      setConversations((prevConversations) =>
+        prevConversations.map((conversation) => {
+          // Check if the conversation ID matches the active room
+          if (conversation._id === data.data._id) {
+            // Return a new object with updated messages
+            return {
+              ...conversation,
+              messages: data.data.messages,
+            };
+          }
+          return conversation; // return the unchanged conversation
+        })
+      );
     } catch (error) {
       console.error("Error fetching messages:", error);
     }

@@ -7,6 +7,7 @@ const ConversationSchema = new mongoose.Schema({
     ref: "User",
     required: true,
     index: true, // Index to improve search performance for user
+    immutable: true,
   },
   participantIds: [
     { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },

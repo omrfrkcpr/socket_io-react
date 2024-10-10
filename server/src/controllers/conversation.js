@@ -1,5 +1,6 @@
 "use strict";
 
+const { getIoInstance } = require("../configs/socketInstance");
 const { CustomError } = require("../errors/customError");
 const Conversation = require("../models/conversation");
 const Message = require("../models/message");
@@ -16,6 +17,7 @@ module.exports = {
 
     res.send({ error: false, data: conversations });
   },
+
   create: async (req, res) => {
     const { name, participantIds } = req.body;
 
@@ -23,26 +25,49 @@ module.exports = {
       throw new CustomError("Name and participant IDs are required.", 400);
     }
 
-    const newConversation = new Conversation({
+    // Create the conversation
+    const newConversation = await Conversation.create({
       name,
       createdBy: req.user._id,
       participantIds,
     });
 
-    const savedConversation = await newConversation.save();
+    // Populate the conversation to get the messages and sender information
+    const populatedConversation = await Conversation.findById(
+      newConversation._id
+    ).populate({ path: "messages", populate: "senderId" });
 
-    res.status(201).send({ error: false, data: savedConversation });
+    const io = getIoInstance();
+    // console.log(io);
+
+    io.emit("create_conversation", populatedConversation);
+
+    res.status(201).send({ error: false, data: populatedConversation });
   },
+
   read: async (req, res) => {
     const conversation = await Conversation.findOne({
       name: req.params.name,
       $or: [{ createdBy: req.user._id }, { participantIds: req.user._id }],
-    }).populate({ path: "messages", populate: "senderId" });
+    });
 
     if (!conversation) throw new CustomError("Conversation not found", 404);
 
-    res.send({ error: false, data: conversation });
+    await Message.updateMany(
+      {
+        conversation: conversation._id,
+        senderId: { $ne: req.user._id },
+      },
+      { $addToSet: { readerIds: req.user._id } }
+    );
+
+    const updatedConversation = await Conversation.findOne({
+      _id: conversation._id,
+    }).populate({ path: "messages", populate: "senderId" });
+
+    res.send({ error: false, data: updatedConversation });
   },
+
   update: async (req, res) => {
     const { name } = req.body;
 
@@ -56,7 +81,10 @@ module.exports = {
 
     if (!conversation) throw new CustomError("Conversation not found", 404);
 
-    res.send({ error: false, data: conversation });
+    const io = getIoInstance();
+    io.emit("update_conversation", conversation);
+
+    res.send({ error: false, new: conversation });
   },
   delete: async (req, res) => {
     const conversation = await Conversation.findOne({
@@ -68,6 +96,9 @@ module.exports = {
 
     await Message.deleteMany({ conversation: conversation._id });
     await Conversation.deleteOne({ name: req.params.name });
+
+    const io = getIoInstance();
+    io.emit("delete_conversation", conversation);
 
     res.status(204).send();
   },

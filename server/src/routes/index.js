@@ -11,6 +11,8 @@ router.use("/auth", require("./auth"));
 router.use("/conversations", require("./conversations"));
 // users:
 router.use("/users", require("./users"));
+// notifications:
+router.use("/notifications", require("./notifications"));
 
 /* ------------------------------------------------------- */
 module.exports = router;

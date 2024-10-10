@@ -7,6 +7,13 @@ const MessageSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  readerIds: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      index: true, // Index to improve search performance for readers.
+    },
+  ],
   content: { type: String, required: true },
   conversation: { type: mongoose.Schema.Types.ObjectId, ref: "Conversation" },
   createdAt: { type: Date, default: Date.now },

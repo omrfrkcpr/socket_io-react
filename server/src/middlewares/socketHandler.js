@@ -28,6 +28,7 @@ const socketHandler = (io) => {
           content: message,
           conversation: conversation._id,
           senderId: socket.user._id,
+          readerIds: [socket.user._id],
         });
         await newMessage.save();
 
@@ -35,9 +36,7 @@ const socketHandler = (io) => {
         await conversation.save();
 
         io.to(room).emit("receive_message", {
-          message: newMessage.content,
           room,
-          senderId: socket.user._id,
         });
 
         const updatedConversations = await Conversation.find({
@@ -52,60 +51,6 @@ const socketHandler = (io) => {
         console.error(err);
         socket.emit("error", "An error occurred");
       }
-    });
-
-    socket.on("new_conversation", async (data) => {
-      const { name, participantIds } = data;
-
-      if (!name || !participantIds || participantIds.length === 0) {
-        socket.emit("error", "Name and participant IDs are required.");
-        return;
-      }
-
-      const newConversation = new Conversation({
-        name,
-        createdBy: socket.user._id,
-        participantIds,
-      });
-
-      try {
-        const savedConversation = await newConversation.save();
-        socket.emit("conversation_created", savedConversation);
-
-        const updatedConversations = await Conversation.find({
-          $or: [
-            { createdBy: socket.user._id },
-            { participantIds: { $in: socket.user._id } },
-          ],
-        }).populate({ path: "messages", populate: "senderId" });
-
-        io.emit("update_conversations", updatedConversations);
-      } catch (error) {
-        console.error("Error creating conversation:", error);
-        socket.emit("error", "Failed to create conversation.");
-      }
-    });
-
-    // After update conversation
-    socket.on("update_conversation", async () => {
-      const updatedConversations = await Conversation.find({
-        $or: [
-          { createdBy: socket.user._id },
-          { participantIds: { $in: socket.user._id } },
-        ],
-      }).populate({ path: "messages", populate: "senderId" });
-      io.emit("update_conversations", updatedConversations);
-    });
-
-    // After delete conversation
-    socket.on("delete_conversation", async () => {
-      const updatedConversations = await Conversation.find({
-        $or: [
-          { createdBy: socket.user._id },
-          { participantIds: { $in: socket.user._id } },
-        ],
-      }).populate({ path: "messages", populate: "senderId" });
-      io.emit("update_conversations", updatedConversations);
     });
   });
 };

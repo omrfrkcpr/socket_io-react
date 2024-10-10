@@ -33,6 +33,9 @@ const io = new Server(server, {
 const socketHandler = require("./src/middlewares/socketHandler");
 socketHandler(io);
 
+const { setIoInstance } = require("./src/configs/socketInstance");
+setIoInstance(io);
+
 // Error Handler Middleware
 app.use(require("./src/middlewares/errorHandler"));
 
