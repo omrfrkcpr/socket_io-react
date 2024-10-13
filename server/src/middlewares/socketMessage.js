@@ -4,7 +4,7 @@ const Conversation = require("../models/conversation");
 const Message = require("../models/message");
 const socketAuth = require("./socketAuth");
 
-const socketHandler = (io) => {
+const socketMessage = (io) => {
   io.use(socketAuth);
 
   io.on("connection", (socket) => {
@@ -48,4 +48,4 @@ const socketHandler = (io) => {
   });
 };
 
-module.exports = socketHandler;
+module.exports = socketMessage;
