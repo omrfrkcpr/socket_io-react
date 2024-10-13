@@ -10,15 +10,15 @@ const socketHandler = (io) => {
   io.on("connection", (socket) => {
     console.log(`User Connected: ${socket.user._id}`);
 
-    socket.on("join_room", (room) => {
-      socket.join(room);
+    socket.on("join_channel", (channel) => {
+      socket.join(channel);
     });
 
     socket.on("send_message", async (data) => {
-      const { message, room } = data;
+      const { message, channel } = data;
 
       try {
-        const conversation = await Conversation.findOne({ name: room });
+        const conversation = await Conversation.findOne({ name: channel });
         if (!conversation) {
           socket.emit("error", "Conversation not found");
           return;
@@ -35,8 +35,8 @@ const socketHandler = (io) => {
         conversation.messages.push(newMessage);
         await conversation.save();
 
-        io.to(room).emit("receive_message", {
-          room,
+        io.to(channel).emit("receive_message", {
+          channel,
         });
 
         io.emit("receive_conversations");

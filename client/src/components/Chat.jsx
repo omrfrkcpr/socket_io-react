@@ -6,7 +6,12 @@ import useAxios from "../hooks/useAxios";
 import { MdClose } from "react-icons/md";
 import { useSocket } from "../SocketContext";
 
-function Chat({ activeRoom, setActiveRoom, conversations, setConversations }) {
+function Chat({
+  activeChannel,
+  setActiveChannel,
+  conversations,
+  setConversations,
+}) {
   const { currentUser } = useSelector((state) => state.auth);
   const socket = useSocket();
   const axiosWithToken = useAxios();
@@ -15,13 +20,13 @@ function Chat({ activeRoom, setActiveRoom, conversations, setConversations }) {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    if (activeRoom) {
-      socket.emit("join_room", activeRoom);
+    if (activeChannel) {
+      socket.emit("join_channel", activeChannel);
       fetchMessages();
     }
 
     socket.on("receive_message", (data) => {
-      if (data.room === activeRoom) {
+      if (data.channel === activeChannel) {
         fetchMessages();
       }
     });
@@ -29,12 +34,12 @@ function Chat({ activeRoom, setActiveRoom, conversations, setConversations }) {
     return () => {
       socket.off("receive_message");
     };
-  }, [activeRoom]);
+  }, [activeChannel]);
 
   const fetchMessages = async () => {
     try {
       const { data } = await axiosWithToken.get(
-        `/conversations/name/${activeRoom}`
+        `/conversations/name/${activeChannel}`
       );
 
       // console.log(data);
@@ -42,7 +47,7 @@ function Chat({ activeRoom, setActiveRoom, conversations, setConversations }) {
 
       setConversations((prevConversations) =>
         prevConversations.map((conversation) => {
-          // Check if the conversation ID matches the active room
+          // Check if the conversation ID matches the active channel
           if (conversation._id === data.data._id) {
             // Return a new object with updated messages
             return {
@@ -61,7 +66,7 @@ function Chat({ activeRoom, setActiveRoom, conversations, setConversations }) {
 
   const sendMessage = () => {
     if (message.trim()) {
-      socket.emit("send_message", { message, room: activeRoom });
+      socket.emit("send_message", { message, channel: activeChannel });
       setMessage("");
     }
   };
@@ -95,7 +100,7 @@ function Chat({ activeRoom, setActiveRoom, conversations, setConversations }) {
         formattedDate: formatDynamicDate(msg.createdAt),
       }))
     );
-  }, [activeRoom]);
+  }, [activeChannel]);
 
   // Scroll to the bottom of the messages when they change
   useEffect(() => {
@@ -106,7 +111,7 @@ function Chat({ activeRoom, setActiveRoom, conversations, setConversations }) {
     <div className="flex flex-col h-full w-full p-1 md:p-4 relative">
       <button
         className="absolute right-10 md:right-12 top-6 bg-red-600 text-white p-[2px] rounded-full text-lg md:text-xl hover:opacity-50"
-        onClick={() => setActiveRoom(null)}
+        onClick={() => setActiveChannel(null)}
       >
         <MdClose />
       </button>

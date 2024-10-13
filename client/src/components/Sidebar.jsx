@@ -16,8 +16,8 @@ import NotificationsPopup from "./NotificationsPopup";
 import toastNotify from "../helpers/toastNotify";
 
 function Sidebar({
-  setActiveRoom,
-  activeRoom,
+  setActiveChannel,
+  activeChannel,
   conversations,
   setConversations,
 }) {
@@ -41,10 +41,10 @@ function Sidebar({
   }, []);
 
   useEffect(() => {
-    if (!conversations.some((conv) => conv.name === activeRoom)) {
-      setActiveRoom(null);
+    if (!conversations.some((conv) => conv.name === activeChannel)) {
+      setActiveChannel(null);
     }
-  }, [conversations, activeRoom]);
+  }, [conversations, activeChannel]);
 
   useEffect(() => {
     if (socket) {
@@ -116,8 +116,8 @@ function Sidebar({
       console.log(error);
       toastNotify("error", error.message);
     } finally {
-      if (name === activeRoom) {
-        setActiveRoom(null);
+      if (name === activeChannel) {
+        setActiveChannel(null);
       }
     }
   };
@@ -130,7 +130,7 @@ function Sidebar({
   };
 
   const handleConversationClick = (conversationName) => {
-    setActiveRoom(conversationName);
+    setActiveChannel(conversationName);
   };
 
   const removeSelectedUser = (userId) => {
@@ -229,7 +229,7 @@ function Sidebar({
                     <div
                       key={conversation._id}
                       className={`cursor-pointer text-sm md:text-md p-2 rounded-lg flex justify-between ${
-                        activeRoom === conversation.name
+                        activeChannel === conversation.name
                           ? "bg-blue-600"
                           : "bg-gray-700 hover:bg-gray-600"
                       }`}
