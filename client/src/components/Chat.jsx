@@ -21,9 +21,10 @@ function Chat({ activeRoom, setActiveRoom, conversations, setConversations }) {
     }
 
     socket.on("receive_message", (data) => {
-      if (data.room === activeRoom) {
-        fetchMessages();
-      }
+      // if (data.room === activeRoom) {
+      //   fetchMessages();
+      // }
+      fetchMessages();
     });
 
     return () => {

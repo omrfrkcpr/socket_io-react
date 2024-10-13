@@ -222,10 +222,8 @@ function Sidebar({
             <div className="flex flex-col space-y-2 overflow-y-auto max-h-[300px] mb-4 pb-3 border-b border-white">
               {conversations &&
                 conversations.map((conversation) => {
-                  const isNewMessage = conversation.messages.find(
-                    (message) =>
-                      message.senderId !== currentUser._id &&
-                      !message?.readerIds.includes(currentUser._id)
+                  const isNewMessage = conversation.messages.some(
+                    (message) => !message.readerIds.includes(currentUser._id)
                   );
                   return (
                     <div
