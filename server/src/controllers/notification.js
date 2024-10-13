@@ -40,9 +40,6 @@ module.exports = {
   },
 
   create: async (req, res) => {
-    if (!req.user) {
-      throw new Error("Unauthorized", 403);
-    }
     const { content, userId, notificationType } = req.body;
     const notification = new Notification({
       userId,
@@ -52,7 +49,7 @@ module.exports = {
     await notification.save();
 
     const newNotifications = await Notification.find({
-      userId: req.user._id,
+      userId,
     }).sort({ createdAt: -1 });
 
     const io = getIoInstance();
