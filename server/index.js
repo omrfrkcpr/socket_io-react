@@ -29,13 +29,13 @@ const io = new Server(server, {
   cors: corsOptions,
 });
 
+const { setIoInstance } = require("./src/configs/socketInstance");
+setIoInstance(io);
+
 // Import and use the socket handler
 require("./src/middlewares/socketHandler");
 // const socketHandler = require("./src/middlewares/socketHandler");
 // socketHandler(io);
-
-const { setIoInstance } = require("./src/configs/socketInstance");
-setIoInstance(io);
 
 // Error Handler Middleware
 app.use(require("./src/middlewares/errorHandler"));
