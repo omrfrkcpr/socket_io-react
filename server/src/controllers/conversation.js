@@ -36,10 +36,7 @@ module.exports = {
     const io = getIoInstance();
     // console.log(io);
 
-    const participants = [...participantIds, req.user._id];
-    participants.forEach((userId) => {
-      io.to(userId.toString()).emit("receive_conversations");
-    });
+    io.emit("receive_conversations");
 
     res.status(201).send({ error: false, data: newConversation });
   },
@@ -81,14 +78,7 @@ module.exports = {
     if (!conversation) throw new CustomError("Conversation not found", 404);
 
     const io = getIoInstance();
-
-    const participants = [
-      ...conversation.participantIds,
-      conversation.createdBy,
-    ];
-    participants.forEach((userId) => {
-      io.to(userId.toString()).emit("receive_conversations");
-    });
+    io.emit("receive_conversations");
 
     res.send({ error: false, new: conversation });
   },
@@ -104,14 +94,7 @@ module.exports = {
     await Conversation.deleteOne({ name: req.params.name });
 
     const io = getIoInstance();
-
-    const participants = [
-      ...conversation.participantIds,
-      conversation.createdBy,
-    ];
-    participants.forEach((userId) => {
-      io.to(userId.toString()).emit("receive_conversations");
-    });
+    io.emit("receive_conversations");
 
     res.status(204).send();
   },
