@@ -21,10 +21,9 @@ function Chat({ activeRoom, setActiveRoom, conversations, setConversations }) {
     }
 
     socket.on("receive_message", (data) => {
-      // if (data.room === activeRoom) {
-      //   fetchMessages();
-      // }
-      fetchMessages();
+      if (data.room === activeRoom) {
+        fetchMessages();
+      }
     });
 
     return () => {
@@ -47,9 +46,9 @@ function Chat({ activeRoom, setActiveRoom, conversations, setConversations }) {
           if (conversation._id === data.data._id) {
             // Return a new object with updated messages
             return {
-              // ...conversation,
-              // messages: data.data.messages,
-              ...data.data,
+              ...conversation,
+              messages: data.data.messages,
+              // ...data.data,
             };
           }
           return conversation; // return the unchanged conversation
