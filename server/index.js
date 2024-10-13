@@ -30,8 +30,9 @@ const io = new Server(server, {
 });
 
 // Import and use the socket handler
-const socketHandler = require("./src/middlewares/socketHandler");
-socketHandler(io);
+require("./src/middlewares/socketHandler");
+// const socketHandler = require("./src/middlewares/socketHandler");
+// socketHandler(io);
 
 const { setIoInstance } = require("./src/configs/socketInstance");
 setIoInstance(io);

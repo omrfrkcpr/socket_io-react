@@ -3,8 +3,11 @@
 const Conversation = require("../models/conversation");
 const Message = require("../models/message");
 const socketAuth = require("./socketAuth");
+const { getIoInstance } = require("../configs/socketInstance");
 
-const socketHandler = (io) => {
+const socketHandler = () => {
+  const io = getIoInstance();
+
   io.use(socketAuth);
 
   io.on("connection", (socket) => {
