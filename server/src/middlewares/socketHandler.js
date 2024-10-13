@@ -39,14 +39,7 @@ const socketHandler = (io) => {
           room,
         });
 
-        const updatedConversations = await Conversation.find({
-          $or: [
-            { createdBy: socket.user._id },
-            { participantIds: { $in: socket.user._id } },
-          ],
-        }).populate({ path: "messages", populate: "senderId" });
-
-        io.emit("update_conversations", updatedConversations);
+        io.emit("receive_conversations");
       } catch (err) {
         console.error(err);
         socket.emit("error", "An error occurred");
