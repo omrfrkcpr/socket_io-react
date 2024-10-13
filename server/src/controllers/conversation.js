@@ -11,6 +11,7 @@ module.exports = {
       throw new CustomError("Unauthorized", 401);
     }
 
+    // Populate the conversation to get the messages and sender information
     const conversations = await Conversation.find({
       $or: [{ createdBy: req.user._id }, { participantIds: req.user._id }],
     }).populate({ path: "messages", populate: "senderId" });
@@ -32,17 +33,15 @@ module.exports = {
       participantIds,
     });
 
-    // Populate the conversation to get the messages and sender information
-    const populatedConversation = await Conversation.findById(
-      newConversation._id
-    ).populate({ path: "messages", populate: "senderId" });
-
     const io = getIoInstance();
     // console.log(io);
 
-    io.emit("create_conversation", populatedConversation);
+    const participants = [...participantIds, req.user._id];
+    participants.forEach((userId) => {
+      io.to(userId.toString()).emit("receive_conversations");
+    });
 
-    res.status(201).send({ error: false, data: populatedConversation });
+    res.status(201).send({ error: false, data: newConversation });
   },
 
   read: async (req, res) => {
@@ -82,7 +81,14 @@ module.exports = {
     if (!conversation) throw new CustomError("Conversation not found", 404);
 
     const io = getIoInstance();
-    io.emit("update_conversation", conversation);
+
+    const participants = [
+      ...conversation.participantIds,
+      conversation.createdBy,
+    ];
+    participants.forEach((userId) => {
+      io.to(userId.toString()).emit("receive_conversations");
+    });
 
     res.send({ error: false, new: conversation });
   },
@@ -98,7 +104,14 @@ module.exports = {
     await Conversation.deleteOne({ name: req.params.name });
 
     const io = getIoInstance();
-    io.emit("delete_conversation", conversation);
+
+    const participants = [
+      ...conversation.participantIds,
+      conversation.createdBy,
+    ];
+    participants.forEach((userId) => {
+      io.to(userId.toString()).emit("receive_conversations");
+    });
 
     res.status(204).send();
   },

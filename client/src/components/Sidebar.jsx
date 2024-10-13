@@ -13,6 +13,7 @@ import { RiDeleteBin5Fill } from "react-icons/ri";
 import useAxios from "../hooks/useAxios";
 import { useSocket } from "../SocketContext";
 import NotificationsPopup from "./NotificationsPopup";
+import toastNotify from "../helpers/toastNotify";
 
 function Sidebar({
   setActiveRoom,
@@ -47,46 +48,18 @@ function Sidebar({
 
   useEffect(() => {
     if (socket) {
-      socket.on("update_conversations", (data) => {
-        setConversations(data);
-      });
-
-      socket.on("update_conversation", (data) => {
-        const updatedConversations = conversations.map((conv) =>
-          conv._id === data._id
-            ? {
-                ...conv,
-                messages: data.messages,
-                name: data.name,
-                participantIds: data.participantIds,
-              }
-            : conv
-        );
-        setConversations(updatedConversations);
-      });
-
-      socket.on("create_conversation", (data) => {
-        setConversations([...conversations, data]);
-      });
-
-      socket.on("delete_conversation", (data) => {
-        const updatedConversations = conversations.filter(
-          (conv) => conv._id !== data._id
-        );
-        setConversations(updatedConversations);
-      });
-
       socket.on("receive_notifications", (data) => {
         if (data.find((n) => n.userId === currentUser._id))
           setNotifications(data);
       });
 
+      socket.on("receive_conversations", () => {
+        fetchConversations();
+      });
+
       return () => {
-        socket.off("update_conversations");
-        socket.off("update_conversation");
         socket.off("receive_notifications");
-        socket.off("create_conversation");
-        socket.off("delete_conversation");
+        socket.off("receive_conversations");
       };
     }
   }, [socket]);
@@ -105,29 +78,47 @@ function Sidebar({
 
   const createConversation = async () => {
     if (newConversationName && selectedUsers.length > 0) {
-      await axiosWithToken.post(`/conversations`, {
-        name: newConversationName,
-        participantIds: selectedUsers,
-      });
-      setNewConversationName("");
-      setSelectedUsers([]);
+      try {
+        await axiosWithToken.post(`/conversations`, {
+          name: newConversationName,
+          participantIds: selectedUsers,
+        });
+      } catch (error) {
+        console.log(error);
+        toastNotify("error", error.message);
+      } finally {
+        setNewConversationName("");
+        setSelectedUsers([]);
+      }
     }
   };
 
   const updateConversation = async (name) => {
     if (editConversationName) {
-      await axiosWithToken.put(`/conversations/name/${name}`, {
-        name: editConversationName,
-      });
-      setEditConversationId(null);
-      setEditConversationName("");
+      try {
+        await axiosWithToken.put(`/conversations/name/${name}`, {
+          name: editConversationName,
+        });
+      } catch (error) {
+        console.log(error);
+        toastNotify("error", error.message);
+      } finally {
+        setEditConversationId(null);
+        setEditConversationName("");
+      }
     }
   };
 
   const deleteConversation = async (name) => {
-    await axiosWithToken.delete(`/conversations/name/${name}`);
-    if (name === activeRoom) {
-      setActiveRoom(null);
+    try {
+      await axiosWithToken.delete(`/conversations/name/${name}`);
+    } catch (error) {
+      console.log(error);
+      toastNotify("error", error.message);
+    } finally {
+      if (name === activeRoom) {
+        setActiveRoom(null);
+      }
     }
   };
 
